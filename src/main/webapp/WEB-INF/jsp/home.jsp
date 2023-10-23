@@ -14,8 +14,12 @@
 <body>
 <h3>할 일</h3>
 <h4>
-    <form action="/add" method="post">
-        <input type="text" name="todo" placeholder="할 일을 입력하세요">
+    <form action="/add" method="post" enctype="multipart/form-data">
+    <input type="text" name="todo" placeholder="할 일을 입력하세요">
+        <div>
+            <input type="file" accept="image/*" multiple name="files">
+        </div>
+        <button>추가</button>
     </form>
 </h4>
 <hr>
@@ -23,20 +27,29 @@
 <div>
     <table>
         <tr>
-            <td>id</td>
-            <td>todo</td>
-            <td>입력일시</td>
+            <th>id</th>
+            <th>todo</th>
+            <th>파일</th>
+            <th>입력일시</th>
         </tr>
         <c:forEach items="${todoList}" var="todo">
             <tr>
                 <td>${todo.id}</td>
                 <td>${todo.todo}</td>
+                <td>
+                    <c:if test="${todo.numOfFiles > 0}">
+                        <a href="/files?id=${todo.id}">
+                        ${todo.numOfFiles}
+                        </a>
+                    </c:if>
+                </td>
                 <td>${todo.inserted}</td>
                 <td><button>삭제</button></td>
                 <td><button>변경</button></td>
             </tr>
         </c:forEach>
     </table>
+
 </div>
 
 </body>

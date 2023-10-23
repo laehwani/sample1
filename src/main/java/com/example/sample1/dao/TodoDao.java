@@ -9,52 +9,41 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
+import org.apache.ibatis.annotations.Insert;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Options;
+import org.apache.ibatis.annotations.Select;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-@Component
-public class TodoDao {
+@Mapper
+public interface TodoDao {
 
+    @Select("SELECT t.id, t.todo, t.inserted, COUNT(f.todoId) numOfFiles\n"
+       + "FROM todo t\n"
+       + "         LEFT JOIN todoFile f ON t.id = f.todoId\n"
+       + "GROUP BY t.id\n"
+       + "ORDER BY t.id DESC; ")
+    public List<Todo> list();
 
-    @Autowired
-    private DataSource dataSource;
-    public List<Todo> list() throws SQLException {
-        String sql = """
-            SELECT * FROM todo ORDER BY id DESC
-            """;
+    @Insert("""
+       INSERT INTO todo(todo)
+       VALUE (#{todo})
+       """)
 
-        Connection connection = dataSource.getConnection();
-        Statement statement = connection.createStatement();
-        ResultSet resultSet = statement.executeQuery(sql);
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    public int insert(Todo todo);
 
-        List<Todo> list = new ArrayList<>();
-        try (connection; statement; resultSet) {
-            while (resultSet.next()) {
-                Todo todo = new Todo();
-                todo.setId(resultSet.getInt("id"));
-                todo.setTodo(resultSet.getString("todo"));
-                todo.setInserted(resultSet.getTimestamp("inserted").toLocalDateTime());
-                list.add(todo);
-            }
+    @Insert("""
+INSERT INTO todoFile(todoId, name) 
+VALUES (#{todo.id}, #{fileName})
+""")
 
-        }
-        return list;
-    }
+    int insertFlie(Todo todo, String fileName);
 
-    public boolean insert(Todo todo) throws SQLException {
-        String sql = """
-                INSERT INTO todo(todo)
-                VALUE (?)
-            """;
-
-        Connection connection = dataSource.getConnection();
-        PreparedStatement statement = connection.prepareStatement(sql);
-
-        try (connection; statement) {
-            statement.setString(1, todo.getTodo());
-            int rows = statement.executeUpdate();
-
-            return rows == 1;
-
-        }
-    }
+    @Select("""
+        SELECT name
+        FROM todoFile
+        WHERE todoId = #{todoId}
+        """)
+    List<String> selectFilesByTodoId(Integer todoId);
 }
